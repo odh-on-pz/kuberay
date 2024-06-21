@@ -165,7 +165,7 @@ jobs:
     - name: Build MultiArch Image
       uses: docker/build-push-action@v5
       env:
-        PUSH: true
+        PUSH: false
         REPO_ORG: kuberay
         REPO_NAME: operator
       with:
