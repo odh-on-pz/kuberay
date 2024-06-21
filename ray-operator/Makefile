@@ -2,7 +2,7 @@ BUILD_TIME      := $(shell date "+%F %T")
 COMMIT_SHA1     := $(shell git rev-parse HEAD )
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= kuberay-operator:latest
 # Golang forbids converting float from Json to struct. Need allowDangerousTypes=true to unblock build.
 CRD_OPTIONS ?= "crd:maxDescLen=0,generateEmbeddedObjectMeta=true,allowDangerousTypes=true"
 
@@ -101,7 +101,7 @@ docker-push: ## Push image with the manager.
 	${ENGINE} push ${IMG}
 
 docker-multi-arch-image: # Build and push multi arch image, amd64 and arm64 currently
-	${ENGINE} buildx build --push --platform linux/amd64,linux/arm64/v8 -t ${IMG} .
+	${ENGINE} buildx build --push --platform linux/amd64,linux/arm64/v8,linux/ppc64le -t ${IMG} .
 
 ##@ Deployment
 

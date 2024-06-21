@@ -1,14 +1,16 @@
 name: release-image-build
 
 on:
-  workflow_dispatch:
-    inputs:
-      commit:
-        description: 'Commit reference (branch or SHA) from which to build the images.'
-        required: true
-      tag:
-        description: 'Desired release version tag (e.g. v1.1.0-rc.1).'
-        required: true
+  - push
+  - pull_request
+#  workflow_dispatch:
+#    inputs:
+#      commit:
+#        description: 'Commit reference (branch or SHA) from which to build the images.'
+#        required: true
+#      tag:
+#        description: 'Desired release version tag (e.g. v1.1.0-rc.1).'
+#        required: true
 
 jobs:
   release_apiserver_image:
@@ -25,8 +27,8 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.inputs.commit }}
+#      with:
+#        ref: ${{ github.event.inputs.commit }}
 
     - name: install kubebuilder
       run: |
@@ -57,19 +59,19 @@ jobs:
         docker build -t kuberay/apiserver:${{ steps.vars.outputs.sha_short }} -f apiserver/Dockerfile .
         docker save -o /tmp/apiserver.tar kuberay/apiserver:${{ steps.vars.outputs.sha_short }}
 
-    - name: Log in to Quay.io
-      uses: docker/login-action@v2
-      with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+#    - name: Log in to Quay.io
+#      uses: docker/login-action@v2
+#      with:
+#        registry: quay.io
+#        username: ${{ secrets.QUAY_USERNAME }}
+#        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
-    - name: Push Apiserver to Quay.io
-      run: |
-        docker image tag kuberay/apiserver:${{ steps.vars.outputs.sha_short }} quay.io/kuberay/apiserver:${{ steps.vars.outputs.sha_short }};
-        docker push quay.io/kuberay/apiserver:${{ steps.vars.outputs.sha_short }};
-        docker image tag kuberay/apiserver:${{ steps.vars.outputs.sha_short }} quay.io/kuberay/apiserver:${{ github.event.inputs.tag }};
-        docker push quay.io/kuberay/apiserver:${{ github.event.inputs.tag }}
+#    - name: Push Apiserver to Quay.io
+#      run: |
+#        docker image tag kuberay/apiserver:${{ steps.vars.outputs.sha_short }} quay.io/kuberay/apiserver:${{ steps.vars.outputs.sha_short }};
+#        docker push quay.io/kuberay/apiserver:${{ steps.vars.outputs.sha_short }};
+#        docker image tag kuberay/apiserver:${{ steps.vars.outputs.sha_short }} quay.io/kuberay/apiserver:${{ github.event.inputs.tag }};
+#        docker push quay.io/kuberay/apiserver:${{ github.event.inputs.tag }}
 
   release_operator_image:
     env:
@@ -117,12 +119,12 @@ jobs:
         IMG=kuberay/operator:${{ steps.vars.outputs.sha_short }} make docker-image
       working-directory: ${{env.working-directory}}
 
-    - name: Log in to Quay.io
-      uses: docker/login-action@v2
-      with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+#    - name: Log in to Quay.io
+#      uses: docker/login-action@v2
+#      with:
+#        registry: quay.io
+#        username: ${{ secrets.QUAY_USERNAME }}
+#        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
     # Build operators inside the gh runner vm directly and then copy the go binaries to docker images using the Dockerfile.buildx
     - name: Build linux/amd64 Operator go binary
@@ -133,6 +135,16 @@ jobs:
       run: |
         CGO_ENABLED=$CGO_ENABLED GOOS=$GOOS GOARCH=$GOARCH go build -tags strictfipsruntime -a -o manager-$GOARCH main.go
       working-directory: ${{env.working-directory}}
+
+    - name: Build linux/ppc64le Operator go binary
+      env:
+        CGO_ENABLED: 1
+        GOOS: linux
+        GOARCH: ppc64le
+      run: |
+        CGO_ENABLED=$CGO_ENABLED GOOS=$GOOS GOARCH=$GOARCH go build -tags strictfipsruntime -a -o manager-$GOARCH main.go
+      working-directory: ${{env.working-directory}}
+
 
     - name: Build linux/arm64 Operator binary
       env:
@@ -153,7 +165,7 @@ jobs:
         REPO_ORG: kuberay
         REPO_NAME: operator
       with:
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64,linux/arm64,linux/ppc64le
         context: ${{env.working-directory}}
         file: ${{env.working-directory}}/Dockerfile.buildx
         push: ${{env.PUSH}}
@@ -162,13 +174,13 @@ jobs:
           quay.io/${{env.REPO_ORG}}/${{env.REPO_NAME}}:${{ steps.vars.outputs.sha_short }}
           quay.io/${{env.REPO_ORG}}/${{env.REPO_NAME}}:${{ github.event.inputs.tag }}
 
-    - name: Create tag
-      uses: actions/github-script@v6
-      with:
-        script: |
-          await github.rest.git.createRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: 'refs/tags/ray-operator/${{ github.event.inputs.tag }}',
-            sha: '${{ github.event.inputs.commit }}'
-          })
+#    - name: Create tag
+#      uses: actions/github-script@v6
+#      with:
+#        script: |
+#          await github.rest.git.createRef({
+#            owner: context.repo.owner,
+#            repo: context.repo.repo,
+#            ref: 'refs/tags/ray-operator/${{ github.event.inputs.tag }}',
+#            sha: '${{ github.event.inputs.commit }}'
+#          })

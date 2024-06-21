@@ -13,7 +13,7 @@ RUN go mod download
 COPY ./ ./
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o security_proxy cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o security_proxy cmd/main.go
 
 FROM scratch
 WORKDIR /workspace
