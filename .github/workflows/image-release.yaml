@@ -176,7 +176,7 @@ jobs:
         provenance: false
         tags: |
           quay.io/${{env.REPO_ORG}}/${{env.REPO_NAME}}:${{ steps.vars.outputs.sha_short }}
-          quay.io/${{env.REPO_ORG}}/${{env.REPO_NAME}}:${{ github.event.inputs.tag }}
+          quay.io/${{env.REPO_ORG}}/${{env.REPO_NAME}}:latest
 
 #    - name: Create tag
 #      uses: actions/github-script@v6
