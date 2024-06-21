@@ -138,7 +138,7 @@ jobs:
 
     - name: Build linux/ppc64le Operator go binary
       env:
-        CGO_ENABLED: 1
+        CGO_ENABLED: 0
         GOOS: linux
         GOARCH: ppc64le
       run: |
